@@ -1,0 +1,9 @@
+version: '3.4'
+
+services:
+  happy_api:
+    restart: always
+    env_file:
+      - app_api.env
+    volumes:
+      - ./uploads:/usr/src/app/uploads

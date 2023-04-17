@@ -1,0 +1,64 @@
+{
+  "name": "happy-api",
+  "description": "Happy API",
+  "version": "1.0.0",
+  "repository": "https://github.com/amelazzi/happy-api.git",
+  "author": "Amel AZZI <amelias.azzi@gmail.com>",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "migrate": "./node_modules/.bin/sequelize db:migrate --env migration",
+    "seed": "./node_modules/.bin/sequelize db:seed:all --env migration",
+    "prebuild": "rm -rf dist",
+    "build": "mkdir -p dist && cp -R node_modules src dist",
+    "prestart": "npm run migrate && npm run seed",
+    "start": "node --experimental-specifier-resolution=node --experimental-modules src/index.js",
+    "watch": "nodemon --exec 'yarn start'",
+    "debug": "nodemon --inspect --exec 'yarn start'",
+    "pretest": "docker run --name db-test -e POSTGRES_PASSWORD=postgres -p 5431:5432 -d postgres && sleep 5",
+    "test": "NODE_ENV=test DATABASE_HOST=localhost DATABASE_PORT=5431 DATABASE_USER=postgres DATABASE_PASSWORD=postgres DATABASE_NAME=postgres ./node_modules/.bin/nyc ./node_modules/.bin/mocha --experimental-specifier-resolution=node --experimental-modules; docker kill db-test; docker container rm db-test"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.10.1",
+    "@babel/core": "^7.10.2",
+    "@babel/node": "^7.10.1",
+    "@babel/preset-env": "^7.10.2",
+    "@babel/register": "^7.17.0",
+    "node-mocks-http": "^1.11.0",
+    "nodemon": "^2.0.4",
+    "nyc": "^15.1.0",
+    "sinon": "^15.0.2"
+  },
+  "dependencies": {
+    "@hapi/joi": "^17.1.1",
+    "ajv": "^8.10.0",
+    "ajv-formats": "^2.1.1",
+    "bcrypt": "^5.0.1",
+    "chai": "^4.3.6",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "crypto-random-string": "^5.0.0",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.1",
+    "express-jsdoc-swagger": "^1.8.0",
+    "helmet": "^6.0.0",
+    "http-status-codes": "^2.2.0",
+    "jsonwebtoken": "^9.0.0",
+    "mocha": "^10.0.0",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.2",
+    "pg": "^8.2.1",
+    "sequelize": "^6.23.2",
+    "sequelize-cli": "^6.4.1",
+    "winston": "^3.2.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coveragePathIgnorePatterns": [
+      "./node_modules/",
+      "./docker/",
+      "./src/"
+    ]
+  }
+}

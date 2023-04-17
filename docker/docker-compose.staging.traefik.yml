@@ -1,0 +1,42 @@
+version: "3.4"
+
+services:
+  happy_api:
+    container_name: happy_api-staging
+    networks:
+      - internal_network
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=happy_api-staging"
+      - "traefik.frontend.rule=Host:happy.api.staging.qualia.fr"
+      - "traefik.port=${PORT:-5000}"
+      - "traefik.docker.network=traefik_webgateway"
+    environment:
+      - DATABASE_HOST=happy_db
+      - DATABASE_PORT=5432
+    depends_on:
+      - happy_db
+    command: ["sh", "./wait-for-it.sh", "happy_db:5432", "--", "yarn", "start"]
+
+  happy_db:
+    container_name: happy_db-staging
+    image: postgres
+    restart: always
+    env_file:
+      - app_db.env
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      - ./db_volume:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - internal_network
+
+networks:
+  internal_network:
+    internal: true
+  traefik:
+    external:
+      name: traefik_webgateway
+
