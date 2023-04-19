@@ -69,5 +69,14 @@ jobs:
           echo '[[ -z "$DOCKER_COMPOSE_PATH" ]] && { echo DOCKER_COMPOSE_PATH must be setted; exit 1; } || sudo rm $DOCKER_COMPOSE_PATH/app_db.env' >> clear.sh
           echo '[[ -z "$DOCKER_COMPOSE_PATH" ]] && { echo DOCKER_COMPOSE_PATH must be setted; exit 1; } || sudo rm -rf $DOCKER_COMPOSE_PATH/db' >> clear.sh
           echo 'mkdir -p $DOCKER_COMPOSE_PATH/db/init' >> clear.sh
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER }} -p ${{ secrets.SERVER_PORT }} 'bash -s' < clear.sh
-          rm clear.sh
+
+      - name: Deploy using SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER }}
+          username: ${{ secrets.SERVER_USER }}
+          passphrase: ${{ secrets.PRIVATE_KEY_PASSPHRASE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            cat clear.sh | ssh -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER }} -p ${{ secrets.SERVER_PORT }}
