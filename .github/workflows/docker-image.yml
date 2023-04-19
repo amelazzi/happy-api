@@ -1,0 +1,73 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches-ignore:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+      DOCKER_COMPOSE_PATH: ${{ secrets.DOCKER_COMPOSE_PATH }}
+      NODE_ENV: <your-node-environment>
+      LOG_LEVEL: <your-log-level>
+      API_HOST: <your-api-host>
+      WEB_HOST: <your-web-host>
+      PORT: <your-port>
+      HOST: <your-host>
+      SWAGGER_ENABLE: <your-swagger-enable>
+      CRON_ENABLE: <your-cron-enable>
+      CRON_CLEAN_TOKENS_SCHEDULE: <your-cron-clean-tokens-schedule>
+      CRON_CLIENTS_SCHEDULE: <your-cron-clients-schedule>
+      CRON_ARTICLES_SCHEDULE: <your-cron-articles-schedule>
+      JWT_SECRET: <your-jwt-secret>
+      ACCESS_TOKEN_DURATION: <your-access-token-duration>
+      REFRESH_TOKEN_DURATION: <your-refresh-token-duration>
+      TEMP_TOKEN_DURATION: <your-temp-token-duration>
+      FINGERPRINT_MAX_AGE: <your-fingerprint-max-age>
+      CHUNK_SIZE: <your-chunk-size>
+      DATABASE_HOST: <your-database-host>
+      DATABASE_PORT: <your-database-port>
+      DATABASE_NAME: <your-database-name>
+      DATABASE_USER: <your-database-user>
+      DATABASE_PASSWORD: <your-database-password>
+      EXTERNAL_PATH: <your-external-path>
+      EXTERNAL_USER: <your-external-user>
+      EXTERNAL_PWD: <your-external-pwd>
+      EXTERNAL_API_KEY: <your-external-api-key>
+      EXTERNAL_ACCOUNT_TYPE: <your-external-account-type>
+      NODEMAILER_HOST: <your-nodemailer-host>
+      NODEMAILER_PORT: <your-nodemailer-port>
+      NODEMAILER_SENDER_EMAIL: <your-nodemailer-sender-email>
+      NODEMAILER_SENDER_PWD: <your-nodemailer-sender-password>
+      SERVER_USER: <your-server-user>
+      SERVER: <your-server>
+      SERVER_PORT: <your-server-port>
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Registry
+        run: |
+          echo ${{ secrets.DOCKER_REGISTRY_PWD }} | docker login $DOCKER_REGISTRY -u ${{ secrets.DOCKER_REGISTRY_LOGIN }} --password-stdin
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -f docker/Dockerfile -t $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:git-actions-worfkflow .
+          docker push $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:git-actions-worfkflow
+
+      - name: Deploy
+        run: |
+          # Clear script
+          echo '[[ -z "$DOCKER_COMPOSE_PATH" ]] && { echo DOCKER_COMPOSE_PATH must be setted; exit 1; } || sudo rm $DOCKER_COMPOSE_PATH/*.yml' > clear.sh
+          echo '[[ -z "$DOCKER_COMPOSE_PATH" ]] && { echo DOCKER_COMPOSE_PATH must be setted; exit 1; } || sudo rm $DOCKER_COMPOSE_PATH/app_api.env' >> clear.sh
+          echo '[[ -z "$DOCKER_COMPOSE_PATH" ]] && { echo DOCKER_COMPOSE_PATH must be setted; exit 1; } || sudo rm $DOCKER_COMPOSE_PATH/app_db.env' >> clear.sh
+          echo '[[ -z "$DOCKER_COMPOSE_PATH" ]] && { echo DOCKER_COMPOSE_PATH must be setted; exit 1; } || sudo rm -rf $DOCKER_COMPOSE_PATH/db' >> clear.sh
+          echo 'mkdir -p $DOCKER_COMPOSE_PATH/db/init' >> clear.sh
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER }} -p ${{ secrets.SERVER_PORT }} 'bash -s' < clear.sh
+          rm clear.sh
